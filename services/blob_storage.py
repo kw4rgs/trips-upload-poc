@@ -16,9 +16,6 @@ from azure.storage.blob import (
 from config import Settings, get_settings
 from models.enums import TripSource
 
-if TYPE_CHECKING:
-    from azure.storage.blob import ContainerClient
-
 SOURCE_FILE_NAMES: dict[TripSource, str] = {
     TripSource.GPS: "gps.json",
     TripSource.IMU: "imu.bin",
