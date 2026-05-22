@@ -15,6 +15,16 @@ from shared.logging import reset_logging
 
 
 @pytest.fixture(autouse=True)
+def _isolated_telemetry() -> Generator[None, None, None]:
+    """Reset telemetry configuration between tests."""
+    from shared.telemetry import reset_telemetry
+
+    reset_telemetry()
+    yield
+    reset_telemetry()
+
+
+@pytest.fixture(autouse=True)
 def _isolated_logging() -> Generator[None, None, None]:
     """Reset structured logging handlers between tests."""
     reset_logging()
