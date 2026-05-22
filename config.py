@@ -13,10 +13,16 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        populate_by_name=True,
     )
 
     storage_account_name: str = Field(default="", description="Blob storage account name")
     storage_container: str = Field(default="landing", description="Blob container for trip files")
+    azure_webjobs_storage: str = Field(
+        default="",
+        validation_alias="AzureWebJobsStorage",
+        description="Functions runtime storage; used for Azurite/local blob access",
+    )
     cosmos_endpoint: str = Field(default="", description="Cosmos DB account URI")
     cosmos_database: str = Field(default="trips", description="Cosmos database name")
     cosmos_container: str = Field(

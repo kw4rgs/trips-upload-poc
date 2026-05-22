@@ -84,8 +84,8 @@
 - **AC:** Unit tests: valid/invalid/expired mock token
 
 ### T09 — BlobStorageService (Épica 3)
-- [ ] `generate_sas()`, `blob_exists()`, `get_blob_properties()`, `download_blob()`, `upload_blob()`
-- [ ] User Delegation SAS; Azurite local
+- [x] `generate_sas()`, `blob_exists()`, `get_blob_properties()`, `download_blob()`, `upload_blob()`
+- [x] User Delegation SAS; Azurite local
 - **Effort:** 4h | **Deps:** T05
 - **AC:** Integration test SAS + exists contra Azurite
 
