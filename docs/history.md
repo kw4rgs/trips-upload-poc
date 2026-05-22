@@ -18,6 +18,7 @@ Registro cronológico de cambios del repositorio desde el inicio del POC.
 | `e52dfc9` | — | T11 | EventHubService: publish TripEvent |
 | `2e2cdda` | 2026-05-22 | T12 | Endpoint POST /api/upload/session + UploadSessionService + docs/history.md |
 | `261e21b` | 2026-05-22 | T13 | Endpoint POST /api/upload/complete + validación + Event Hub publish |
+| `69d315e` | 2026-05-22 | — | Actualización de hashes T12/T13 en history.md |
 
 \* Fechas no incluidas en commits tempranos; ver `git log` para timestamps exactos.
 
