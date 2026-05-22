@@ -1,4 +1,9 @@
-"""Event Hub — publish_trip_event."""
+"""Event Hub publisher — production messaging backend.
+
+Uses the Azure Event Hubs AMQP SDK with Managed Identity (DefaultAzureCredential).
+For local development use ``KafkaPublisher`` instead (see ``services/kafka_publisher.py``).
+The active implementation is selected by ``services/messaging_factory.get_publisher()``.
+"""
 
 from __future__ import annotations
 
@@ -19,8 +24,13 @@ class EventHubConfigurationError(EventHubError):
     """Event Hub service is misconfigured."""
 
 
-class EventHubService:
-    """Azure Event Hub publisher for trip metadata events."""
+class EventHubPublisher:
+    """Azure Event Hub publisher for trip metadata events (production).
+
+    The underlying ``EventHubProducerClient`` is initialised lazily on the
+    first ``publish_trip_event`` call and reused for the lifetime of the
+    worker process — avoiding a new AMQP connection on every HTTP request.
+    """
 
     def __init__(
         self,
@@ -49,15 +59,21 @@ class EventHubService:
         return trip_event.model_dump_json()
 
     def publish_trip_event(self, trip_event: TripEvent) -> None:
-        """Publish a metadata-only trip event to Event Hub."""
+        """Publish a metadata-only trip event to Event Hub.
+
+        The producer client is created on first call and reused on subsequent
+        calls within the same worker process (FX-07).
+        """
+        if self._producer is None:
+            self._producer = self._create_producer()
+
         payload = self.serialize_trip_event(trip_event)
         event = EventData(body=payload)
         event.properties = self._build_event_properties(trip_event)
 
-        producer = self._producer or self._create_producer()
-        batch = producer.create_batch(partition_key=trip_event.route_id)
+        batch = self._producer.create_batch(partition_key=trip_event.route_id)
         batch.add(event)
-        producer.send_batch(batch)
+        self._producer.send_batch(batch)
 
     @staticmethod
     def _build_event_properties(trip_event: TripEvent) -> dict[str, Any]:
@@ -67,3 +83,7 @@ class EventHubService:
             "upload_session_id": trip_event.upload_session_id,
             "event_id": trip_event.event_id,
         }
+
+
+# Backward-compatible alias — remove once all callers migrate to EventHubPublisher.
+EventHubService = EventHubPublisher

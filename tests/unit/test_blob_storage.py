@@ -38,6 +38,7 @@ def test_build_trip_storage_root() -> None:
 
 
 def test_blob_exists_returns_true(settings) -> None:
+    settings.use_azurite = True
     settings.azure_webjobs_storage = (
         "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
         "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUz1HT2LtL7vADFjPUPE=;"
@@ -61,6 +62,7 @@ def test_blob_exists_returns_true(settings) -> None:
 
 
 def test_get_blob_properties_raises_when_missing(settings) -> None:
+    settings.use_azurite = True
     settings.azure_webjobs_storage = (
         "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
         "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUz1HT2LtL7vADFjPUPE=;"
@@ -85,6 +87,7 @@ def test_get_blob_properties_raises_when_missing(settings) -> None:
 
 
 def test_generate_sas_uses_account_key_for_connection_string_mode(settings) -> None:
+    settings.use_azurite = True
     settings.azure_webjobs_storage = (
         "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
         "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUz1HT2LtL7vADFjPUPE=;"

@@ -104,10 +104,17 @@ class BlobStorageService:
         )
 
     def _create_client(self) -> BlobServiceClient:
-        if self._settings.azure_webjobs_storage:
-            return BlobServiceClient.from_connection_string(
-                self._settings.azure_webjobs_storage,
-            )
+        # ``use_azurite`` is the explicit gate for local emulator paths.
+        # ``AzureWebJobsStorage`` is intentionally NOT used here — it is set by
+        # the Functions runtime in production too, and using it for data-plane
+        # operations would bypass Managed Identity (FX-08).
+        if self._settings.use_azurite:
+            conn_str = self._settings.azure_webjobs_storage
+            if not conn_str:
+                raise BlobStorageConfigurationError(
+                    "USE_AZURITE=true but AzureWebJobsStorage connection string is not set",
+                )
+            return BlobServiceClient.from_connection_string(conn_str)
 
         if not self._settings.storage_account_name:
             raise BlobStorageConfigurationError("STORAGE_ACCOUNT_NAME is not configured")
@@ -120,7 +127,7 @@ class BlobStorageService:
     @property
     def uses_connection_string(self) -> bool:
         """Return True when running against a connection string (e.g. Azurite)."""
-        return bool(self._settings.azure_webjobs_storage)
+        return self._settings.use_azurite
 
     def ensure_container(self) -> None:
         """Create the landing container when it does not exist."""

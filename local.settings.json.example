@@ -1,18 +1,32 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "python",
-    "STORAGE_ACCOUNT_NAME": "satripsuploadpoc",
+
+    "_comment_env": "Set ENVIRONMENT=local to use Azurite + Cosmos emulator + Redpanda (docker-compose)",
+    "ENVIRONMENT": "local",
+    "USE_AZURITE": "true",
+
+    "_comment_blob": "Azurite connection string for Functions runtime AND blob data plane (local only)",
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;",
+    "STORAGE_ACCOUNT_NAME": "devstoreaccount1",
     "STORAGE_CONTAINER": "landing",
-    "COSMOS_ENDPOINT": "https://<cosmos-account>.documents.azure.com:443/",
+
+    "_comment_cosmos": "Cosmos DB emulator endpoint",
+    "COSMOS_ENDPOINT": "https://localhost:8081/",
     "COSMOS_DATABASE": "trips",
     "COSMOS_CONTAINER": "trip_ingestion_log",
+
+    "_comment_kafka": "Redpanda (local) — ignored when ENVIRONMENT=production",
+    "KAFKA_BOOTSTRAP_SERVERS": "localhost:9092",
+    "KAFKA_TOPIC": "trip-processing",
+
+    "_comment_eventhub": "Event Hub — only used when ENVIRONMENT=production",
     "EVENTHUB_NAME": "trip-processing-eventhub",
     "EVENTHUB_FULLY_QUALIFIED_NAMESPACE": "<namespace>.servicebus.windows.net",
-    "JWT_MOCK_SECRET": "poc-dev-secret-change-me",
-    "JWT_MOCK_USER_ID": "user456",
+
+    "JWT_MOCK_SECRET": "poc-dev-secret-change-me-32chars!!",
     "SAS_TTL_MINUTES": "15",
-    "APPLICATIONINSIGHTS_CONNECTION_STRING": "InstrumentationKey=..."
+    "APPLICATIONINSIGHTS_CONNECTION_STRING": ""
   }
 }

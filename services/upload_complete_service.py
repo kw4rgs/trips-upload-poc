@@ -23,8 +23,9 @@ from services.blob_storage import (
     build_blob_path,
 )
 from services.cosmos_db import CosmosService, TripLogNotFoundError
-from services.event_hub import EventHubService
+from services.messaging_factory import get_publisher
 from shared.checksum import checksum_matches
+from shared.messaging import TripEventPublisher
 
 FILE_NAME_TO_SOURCE: dict[str, TripSource] = {
     file_name: source for source, file_name in SOURCE_FILE_NAMES.items()
@@ -43,13 +44,13 @@ class UploadCompleteService:
         *,
         blob_service: BlobStorageService | None = None,
         cosmos_service: CosmosService | None = None,
-        event_hub_service: EventHubService | None = None,
+        event_hub_service: TripEventPublisher | None = None,
         settings: Settings | None = None,
     ) -> None:
         self._settings = settings or get_settings()
         self._blob = blob_service or BlobStorageService(self._settings)
         self._cosmos = cosmos_service or CosmosService(self._settings)
-        self._event_hub = event_hub_service or EventHubService(self._settings)
+        self._event_hub = event_hub_service or get_publisher(self._settings)
 
     def complete_upload(
         self,

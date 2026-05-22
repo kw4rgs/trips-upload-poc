@@ -1,0 +1,85 @@
+services:
+
+  # ---------------------------------------------------------------------------
+  # Azure Blob Storage emulator
+  # Ports: 10000 (blob), 10001 (queue), 10002 (table)
+  # Connection string is set in .env.local and local.settings.json
+  # ---------------------------------------------------------------------------
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: trips-azurite
+    restart: unless-stopped
+    ports:
+      - "10000:10000"   # blob
+      - "10001:10001"   # queue
+      - "10002:10002"   # table
+    volumes:
+      - azurite-data:/data
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0
+
+  # ---------------------------------------------------------------------------
+  # Azure Cosmos DB Linux emulator (NoSQL / Core SQL API)
+  # Docs: https://aka.ms/cosmosdb-emulator-docker
+  # TLS is self-signed — set AZURE_COSMOS_DISABLE_SSL_VERIFICATION=true in tests
+  # or install the emulator certificate.
+  # ---------------------------------------------------------------------------
+  cosmos:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    container_name: trips-cosmos
+    restart: unless-stopped
+    ports:
+      - "8081:8081"     # data plane
+      - "8900:8900"     # gateway
+    environment:
+      AZURE_COSMOS_EMULATOR_PARTITION_COUNT: "3"
+      AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: "true"
+    volumes:
+      - cosmos-data:/tmp/cosmos
+
+  # ---------------------------------------------------------------------------
+  # Redpanda — Kafka-compatible broker (ARM-native, single container, no ZooKeeper)
+  # Kafka API: localhost:9092
+  # Admin / Console UI: http://localhost:8080
+  # ---------------------------------------------------------------------------
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    container_name: trips-redpanda
+    restart: unless-stopped
+    ports:
+      - "9092:9092"     # Kafka API (used by KafkaPublisher)
+      - "9644:9644"     # Admin API
+      - "8080:8080"     # Redpanda Console UI
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp=1
+      - --memory=256M
+      - --reserve-memory=0M
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://localhost:9092
+      - --pandaproxy-addr=0.0.0.0:8082
+      - --advertise-pandaproxy-addr=localhost:8082
+
+  # ---------------------------------------------------------------------------
+  # Redpanda Console — optional web UI for inspecting topics and messages
+  # Accessible at http://localhost:8090
+  # ---------------------------------------------------------------------------
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:latest
+    container_name: trips-redpanda-console
+    restart: unless-stopped
+    depends_on:
+      - redpanda
+    ports:
+      - "8090:8080"
+    environment:
+      CONFIG_FILEPATH: /etc/redpanda-console/config.yaml
+    volumes:
+      - ./docker/redpanda-console-config.yaml:/etc/redpanda-console/config.yaml:ro
+
+volumes:
+  azurite-data:
+  cosmos-data:

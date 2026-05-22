@@ -38,6 +38,7 @@ def azurite_connection_string() -> str | None:
         service = BlobStorageService(
             settings=Settings(
                 storage_container="landing",
+                use_azurite=True,
                 azure_webjobs_storage=connection_string,
             ),
         )
@@ -54,6 +55,7 @@ def blob_service(azurite_connection_string: str | None) -> BlobStorageService:
     return BlobStorageService(
         settings=Settings(
             storage_container="landing",
+            use_azurite=True,
             azure_webjobs_storage=azurite_connection_string,
             sas_ttl_minutes=15,
         ),
