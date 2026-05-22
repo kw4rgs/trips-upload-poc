@@ -5,3 +5,4 @@ PyJWT>=2.8
 azure-storage-blob>=12.24
 azure-identity>=1.19
 azure-cosmos>=4.9
+azure-eventhub>=5.12
