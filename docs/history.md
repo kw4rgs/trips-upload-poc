@@ -16,8 +16,8 @@ Registro cronológico de cambios del repositorio desde el inicio del POC.
 | `0dcd94f` | — | T09 | BlobStorageService: SAS, paths, Azurite |
 | `73716ae` | — | T10 | CosmosService: CRUD trip_ingestion_log |
 | `e52dfc9` | — | T11 | EventHubService: publish TripEvent |
-| `TBD` | — | T12 | Endpoint POST /api/upload/session + UploadSessionService |
-| `TBD` | — | T13 | Endpoint POST /api/upload/complete + validación + Event Hub |
+| `2e2cdda` | 2026-05-22 | T12 | Endpoint POST /api/upload/session + UploadSessionService + docs/history.md |
+| `261e21b` | 2026-05-22 | T13 | Endpoint POST /api/upload/complete + validación + Event Hub publish |
 
 \* Fechas no incluidas en commits tempranos; ver `git log` para timestamps exactos.
 
