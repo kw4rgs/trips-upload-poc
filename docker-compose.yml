@@ -31,8 +31,7 @@ services:
     container_name: trips-cosmos
     restart: unless-stopped
     ports:
-      - "8081:8081"     # data plane + Explorer UI
-      - "8900:8900"     # gateway
+      - "8081:8081"     # data plane + Explorer UI (redirect via cosmos-ui on :8082)
     environment:
       AZURE_COSMOS_EMULATOR_PARTITION_COUNT: "3"
       AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: "true"
