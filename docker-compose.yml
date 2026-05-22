@@ -25,6 +25,10 @@ services:
   # ---------------------------------------------------------------------------
   cosmos:
     image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    # The Cosmos emulator only has linux/amd64 images.
+    # On Apple Silicon, Docker Desktop uses Rosetta 2 to emulate x86_64.
+    # Enable Rosetta in Docker Desktop → Settings → Features in Development.
+    platform: linux/amd64
     container_name: trips-cosmos
     restart: unless-stopped
     ports:
