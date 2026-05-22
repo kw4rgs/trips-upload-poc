@@ -104,16 +104,16 @@
 ## Phase 5: Upload Service endpoints (Épica 2)
 
 ### T12 — upload_session function
-- [ ] `functions/upload_session/` — POST /api/upload/session
-- [ ] Wire: auth → blob paths → SAS → cosmos create
+- [x] `api/v1/upload_session.py` — POST /api/upload/session
+- [x] Wire: auth → blob paths → SAS → cosmos create
 - **Effort:** 3h | **Deps:** T08, T09, T10
 - **AC:** curl local 201 con SAS URLs; correlation_id en log
 
 ### T13 — upload_complete function
-- [ ] `functions/upload_complete/` — POST /api/upload/complete
-- [ ] Validación existencia/tamaño/checksum
-- [ ] Cosmos update + EventHub publish
-- [ ] Idempotencia si ya PUBLISHED
+- [x] `api/v1/upload_complete.py` — POST /api/upload/complete
+- [x] Validación existencia/tamaño/checksum
+- [x] Cosmos update + EventHub publish
+- [x] Idempotencia si ya PUBLISHED
 - **Effort:** 4h | **Deps:** T08, T09, T10, T11
 - **AC:** Unit + integration tests all validation paths
 
