@@ -363,10 +363,11 @@ Ver detalle completo en [`docs/implementation-plan.md`](docs/implementation-plan
 |------|-------|--------|
 | 1 — Infra Azure | T01–T03 | Pendiente (Portal) |
 | 2 — Scaffold | T04–T06 | ✅ Completo |
-| 3 — Modelos | T07 | Pendiente |
-| 4 — Servicios + API | T08–T11 | Pendiente |
-| 5 — Deploy + observabilidad | T12–T14 | Pendiente |
-| 6 — E2E + hardening | T15–T18 | Pendiente |
+| 3 — Modelos | T07 | ✅ Completo |
+| 4 — Servicios core | T08–T11 | ✅ Completo |
+| 5 — Endpoints HTTP | T12–T13 | ✅ Completo |
+| 6 — Observabilidad | T14–T15 | ✅ Completo |
+| 7 — E2E + docs | T16–T18 | ✅ Completo |
 
 ---
 
@@ -397,6 +398,8 @@ Estrategia: **TDD** con pytest — unit tests para servicios y modelos, integrat
 | [`docs/technical-plan.md`](docs/technical-plan.md) | Diseño técnico detallado |
 | [`docs/implementation-plan.md`](docs/implementation-plan.md) | Tasks T01–T18 |
 | [`docs/azure-portal-checklist.md`](docs/azure-portal-checklist.md) | Checklist infra Azure |
+| [`docs/runbook.md`](docs/runbook.md) | Setup local, curl demo, deploy |
+| [`docs/history.md`](docs/history.md) | Historial de commits |
 
 ---
 
