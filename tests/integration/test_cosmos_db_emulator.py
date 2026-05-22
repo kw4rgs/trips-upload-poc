@@ -67,7 +67,7 @@ def test_trip_log_crud_lifecycle(cosmos_crud_service: CosmosService) -> None:
     assert created.status == TripLogStatus.RECEIVED
     assert cosmos_crud_service.trip_exists(route_id, session_id) is True
 
-    updated = cosmos_crud_service.update_trip_log(
+    updated, new_etag = cosmos_crud_service.update_trip_log(
         route_id,
         session_id,
         status=TripLogStatus.VALIDATED,
@@ -77,6 +77,7 @@ def test_trip_log_crud_lifecycle(cosmos_crud_service: CosmosService) -> None:
     assert updated.status == TripLogStatus.VALIDATED
     assert updated.gps_exists is True
 
-    loaded = cosmos_crud_service.get_trip_log(route_id, session_id)
+    loaded, etag = cosmos_crud_service.get_trip_log(route_id, session_id)
     assert loaded is not None
     assert loaded.validation_status == "VALIDATED"
+    assert etag is not None

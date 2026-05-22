@@ -67,8 +67,8 @@ def upload_session(req: func.HttpRequest) -> func.HttpResponse:
             user_id=user_id,
             correlation_id=correlation_id,
         )
-    except (BlobStorageError, CosmosDbError) as exc:
-        logger.info(
+    except (BlobStorageError, CosmosDbError):
+        logger.error(
             {
                 "operation": "upload_session",
                 "status": "FAILED",
@@ -76,10 +76,11 @@ def upload_session(req: func.HttpRequest) -> func.HttpResponse:
                 "route_id": body.route_id,
                 "error": ErrorCode.SERVICE_UNAVAILABLE.value,
             },
+            exc_info=True,
         )
         return error_response(
             error=ErrorCode.SERVICE_UNAVAILABLE,
-            message=str(exc),
+            message="an upstream service is temporarily unavailable",
             status_code=503,
             correlation_id=correlation_id,
         )
