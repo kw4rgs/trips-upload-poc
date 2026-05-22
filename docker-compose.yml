@@ -24,16 +24,14 @@ services:
   # or install the emulator certificate.
   # ---------------------------------------------------------------------------
   cosmos:
-    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
-    # The Cosmos emulator only has linux/amd64 images.
-    # On Apple Silicon, Docker Desktop uses Rosetta 2 to emulate x86_64.
-    # Enable Rosetta in Docker Desktop → Settings → Features in Development.
-    platform: linux/amd64
+    # vnext-preview: multi-arch (ARM64 native on Apple Silicon, no QEMU needed).
+    # API surface is compatible with the GA emulator for NoSQL/Core SQL API.
+    # Explorer UI: https://localhost:8081/_explorer/index.html
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
     container_name: trips-cosmos
     restart: unless-stopped
     ports:
-      - "8081:8081"     # data plane
-      - "8900:8900"     # gateway
+      - "8081:8081"     # data plane (NoSQL API)
     environment:
       AZURE_COSMOS_EMULATOR_PARTITION_COUNT: "3"
       AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: "true"
