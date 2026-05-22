@@ -67,10 +67,10 @@
 ## Phase 3: Modelos Pydantic (Épica 2 prep)
 
 ### T07 — Models layer
-- [ ] `models/session.py` — UploadSessionResponse, UploadTarget
-- [ ] `models/complete.py` — UploadCompleteRequest, FileDescriptor, CompleteResponse
-- [ ] `models/trip_log.py` — TripLog
-- [ ] `models/trip_event.py` — TripEvent
+- [x] `models/session.py` — UploadSessionResponse, UploadTarget
+- [x] `models/complete.py` — UploadCompleteRequest, FileDescriptor, CompleteResponse
+- [x] `models/trip_log.py` — TripLog
+- [x] `models/trip_event.py` — TripEvent
 - **Effort:** 2h | **Deps:** T06
 - **AC:** Unit tests validación Pydantic; no dicts sueltos
 
