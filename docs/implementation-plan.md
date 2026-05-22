@@ -79,7 +79,7 @@
 ## Phase 4: Servicios core (Épicas 3–5)
 
 ### T08 — AuthService (JWT mock)
-- [ ] `services/auth.py` — validate_jwt, extract user_id
+- [x] `services/auth.py` — validate_jwt, extract user_id
 - **Effort:** 1.5h | **Deps:** T05, T07
 - **AC:** Unit tests: valid/invalid/expired mock token
 

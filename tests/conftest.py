@@ -51,11 +51,20 @@ def settings(monkeypatch: pytest.MonkeyPatch) -> Settings:
         "EVENTHUB_FULLY_QUALIFIED_NAMESPACE",
         "test.servicebus.windows.net",
     )
-    monkeypatch.setenv("JWT_MOCK_SECRET", "test-secret")
+    monkeypatch.setenv("JWT_MOCK_SECRET", "test-secret-thirty-two-characters-long!")
     monkeypatch.setenv("JWT_MOCK_USER_ID", "user-test")
     monkeypatch.setenv("SAS_TTL_MINUTES", "15")
     get_settings.cache_clear()
     return get_settings()
+
+
+@pytest.fixture
+def auth_token(settings):
+    """Return a valid Bearer authorization header for tests."""
+    from services.auth import create_mock_token
+
+    token = create_mock_token(settings.jwt_mock_user_id, settings.jwt_mock_secret)
+    return f"Bearer {token}"
 
 
 @pytest.fixture
