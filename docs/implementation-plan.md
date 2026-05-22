@@ -95,7 +95,7 @@
 - **AC:** Integration test CRUD (emulator o mock)
 
 ### T11 — EventHubService (Épica 5)
-- [ ] `publish_trip_event()` con TripEvent schema
+- [x] `publish_trip_event()` con TripEvent schema
 - **Effort:** 2h | **Deps:** T07
 - **AC:** Unit test serialización; integration opcional
 
