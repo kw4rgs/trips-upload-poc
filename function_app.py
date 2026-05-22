@@ -1,15 +1,13 @@
-"""Azure Functions entrypoint for trips-upload-poc Upload Service."""
+"""Azure Functions entrypoint — registers API v1 blueprints."""
 
 import azure.functions as func
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+from api.v1.health import health_bp
+from api.v1.upload_complete import bp as upload_complete_bp
+from api.v1.upload_session import bp as upload_session_bp
 
+app = func.FunctionApp()
 
-@app.route(route="health", methods=["GET"])
-def health(req: func.HttpRequest) -> func.HttpResponse:
-    """Liveness probe for local dev and deployment verification."""
-    return func.HttpResponse(
-        body='{"status":"ok","service":"trips-upload-poc"}',
-        mimetype="application/json",
-        status_code=200,
-    )
+app.register_functions(health_bp)
+app.register_functions(upload_session_bp)
+app.register_functions(upload_complete_bp)

@@ -45,15 +45,15 @@
 ## Phase 2: Scaffold repositorio
 
 ### T04 — Estructura repo
-- [x] Crear árbol `services/upload_service/`, `shared/`, `tests/`
-- [x] `requirements.txt`, `host.json`, `local.settings.json.example`
-- [x] `function_app.py` entrypoint
+- [x] Crear árbol `api/v1/`, `services/`, `models/`, `shared/`, `tests/`, `docs/`
+- [x] `requirements.txt`, `host.json`, `local.settings.json.example`, `config.py`
+- [x] `function_app.py` + blueprints en `api/v1/`
 - **Effort:** 2h | **Deps:** none
 - **AC:** `func start` sin errores de import ✅
 
 ### T05 — Config y logging
-- [ ] `config/settings.py` (Pydantic Settings)
-- [ ] `shared/logging/` structured logger con correlation_id
+- [ ] Completar `config.py` (Pydantic Settings)
+- [ ] `shared/logging.py` + `shared/correlation.py`
 - **Effort:** 1.5h | **Deps:** T04
 - **AC:** Settings carga env; log format constitution-compliant
 
@@ -67,8 +67,8 @@
 ## Phase 3: Modelos Pydantic (Épica 2 prep)
 
 ### T07 — Models layer
-- [ ] `models/upload_session.py` — UploadSessionResponse, UploadTarget
-- [ ] `models/upload_complete.py` — UploadCompleteRequest, FileDescriptor, CompleteResponse
+- [ ] `models/session.py` — UploadSessionResponse, UploadTarget
+- [ ] `models/complete.py` — UploadCompleteRequest, FileDescriptor, CompleteResponse
 - [ ] `models/trip_log.py` — TripLog
 - [ ] `models/trip_event.py` — TripEvent
 - **Effort:** 2h | **Deps:** T06
@@ -79,7 +79,7 @@
 ## Phase 4: Servicios core (Épicas 3–5)
 
 ### T08 — AuthService (JWT mock)
-- [ ] `services/auth_service.py` — validate_jwt, extract user_id
+- [ ] `services/auth.py` — validate_jwt, extract user_id
 - **Effort:** 1.5h | **Deps:** T05, T07
 - **AC:** Unit tests: valid/invalid/expired mock token
 
@@ -152,7 +152,7 @@
 
 ### T18 — README y runbook
 - [ ] Setup local, env vars, demo curl, Azure manual steps
-- [ ] Referencias a `specs/active/trips-upload-poc/`
+- [ ] Referencias a `docs/`
 - **Effort:** 1.5h | **Deps:** T17
 - **AC:** Dev nuevo puede reproducir POC
 
@@ -197,7 +197,7 @@ T16-T18  Tests E2E + docs
 
 - **constitution.md** is immutable — reject changes that violate it
 - **spec.md** is source of truth for requirements
-- **specs/active/trips-upload-poc/** is the single documentation source for this project
+- **docs/** is the single documentation source for this project
 
 ---
 

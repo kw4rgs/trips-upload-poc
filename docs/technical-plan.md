@@ -67,34 +67,36 @@ flowchart TB
 
 ```
 trips_upload/
+├── function_app.py                 # Entrypoint — registers api/v1 blueprints
+├── api/
+│   └── v1/
+│       ├── health.py               # GET /api/health
+│       ├── upload_session.py       # POST /api/upload/session
+│       └── upload_complete.py      # POST /api/upload/complete
 ├── services/
-│   └── upload-service/
-│       ├── functions/
-│       │   ├── upload_session/      # POST /api/upload/session
-│       │   └── upload_complete/     # POST /api/upload/complete
-│       ├── services/
-│       │   ├── blob_storage_service.py
-│       │   ├── cosmos_service.py
-│       │   ├── eventhub_service.py
-│       │   └── auth_service.py
-│       ├── models/
-│       │   ├── upload_session.py
-│       │   ├── upload_complete.py
-│       │   ├── trip_event.py
-│       │   └── trip_log.py
-│       ├── config/
-│       │   └── settings.py
-│       └── host.json
+│   ├── blob_storage.py             # SAS, exists, properties
+│   ├── cosmos_db.py                # trip_ingestion_log CRUD
+│   ├── event_hub.py                # publish_trip_event
+│   └── auth.py                     # JWT mock validation
+├── models/
+│   ├── session.py
+│   ├── complete.py
+│   ├── trip_log.py
+│   └── trip_event.py
+├── config.py                       # Settings (env vars)
 ├── shared/
-│   ├── logging/
-│   ├── clients/
-│   └── utils/
+│   ├── logging.py
+│   └── correlation.py
 ├── tests/
 │   ├── unit/
 │   ├── integration/
 │   └── e2e/
-├── specs/active/trips-upload-poc/   # Project documentation (SDD Spec Kit)
-├── function_app.py                  # Azure Functions entrypoint (if monorepo root)
+├── docs/
+│   ├── constitution.md
+│   ├── poc-architecture.md
+│   ├── implementation-plan.md
+│   └── azure-portal-checklist.md
+├── host.json
 ├── requirements.txt
 ├── local.settings.json.example
 └── README.md
