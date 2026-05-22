@@ -23,6 +23,7 @@ Registro cronológico de cambios del repositorio desde el inicio del POC.
 | `d5c9064` | 2026-05-22 | T14 | App Insights OpenTelemetry |
 | `1038e9c` | 2026-05-22 | T15 | Structured HTTP errors |
 | `c598e50` | 2026-05-22 | T16–T18 | E2E test, runbook, README final |
+| `c4b8da5` | 2026-05-22 | FX-01–05 | Security & correctness fixes: JWT ownership, atomic publish, Cosmos etag, health probe, 503 sanitization |
 
 ---
 
