@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from azure.cosmos import CosmosClient
-from azure.cosmos.exceptions import CosmosResourceNotFoundError
+from azure.cosmos.exceptions import CosmosHttpResponseError, CosmosResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 
 from config import Settings, get_settings
@@ -16,6 +16,8 @@ from models.trip_log import TripLog
 COSMOS_EMULATOR_KEY = (
     "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
 )
+
+_HTTP_PRECONDITION_FAILED = 412
 
 
 class CosmosDbError(Exception):
@@ -28,6 +30,10 @@ class CosmosConfigurationError(CosmosDbError):
 
 class TripLogNotFoundError(CosmosDbError):
     """Trip log document was not found."""
+
+
+class CosmosConflictError(CosmosDbError):
+    """Optimistic concurrency conflict — document was modified concurrently."""
 
 
 class CosmosService:
@@ -64,45 +70,90 @@ class CosmosService:
         created = self._container.create_item(body=document)
         return TripLog.model_validate(created)
 
-    def get_trip_log(self, route_id: str, upload_session_id: str) -> TripLog | None:
-        """Load a trip log by partition key and session id."""
+    def get_trip_log(
+        self,
+        route_id: str,
+        upload_session_id: str,
+    ) -> tuple[TripLog | None, str | None]:
+        """Load a trip log by partition key and session id.
+
+        Returns:
+            A ``(TripLog, etag)`` tuple, or ``(None, None)`` when not found.
+            The etag should be passed to :meth:`update_trip_log` to enable
+            optimistic concurrency control.
+        """
         try:
             item = self._container.read_item(
                 item=upload_session_id,
                 partition_key=route_id,
             )
         except CosmosResourceNotFoundError:
-            return None
+            return None, None
 
-        return TripLog.model_validate(item)
+        etag: str | None = item.get("_etag") if isinstance(item, dict) else None
+        return TripLog.model_validate(item), etag
 
     def trip_exists(self, route_id: str, upload_session_id: str) -> bool:
         """Return True when a trip log exists for the given session."""
-        return self.get_trip_log(route_id, upload_session_id) is not None
+        trip_log, _ = self.get_trip_log(route_id, upload_session_id)
+        return trip_log is not None
 
     def update_trip_log(
         self,
         route_id: str,
         upload_session_id: str,
+        *,
+        etag: str | None = None,
         **fields: Any,
-    ) -> TripLog:
-        """Update fields on an existing trip log document."""
-        existing = self.get_trip_log(route_id, upload_session_id)
+    ) -> tuple[TripLog, str | None]:
+        """Update fields on an existing trip log document with optimistic concurrency.
+
+        Args:
+            route_id: Cosmos partition key.
+            upload_session_id: Document id.
+            etag: The ``_etag`` value obtained from the last read. When provided,
+                Cosmos will reject the write with a 412 if the document was modified
+                concurrently, raising :class:`CosmosConflictError`.
+            **fields: Arbitrary fields to merge into the existing document.
+
+        Returns:
+            A ``(TripLog, new_etag)`` tuple reflecting the persisted state.
+
+        Raises:
+            TripLogNotFoundError: Document does not exist.
+            CosmosConflictError: Concurrent modification detected (412).
+        """
+        existing, read_etag = self.get_trip_log(route_id, upload_session_id)
         if existing is None:
             raise TripLogNotFoundError(
                 f"Trip log not found for route_id={route_id} "
                 f"upload_session_id={upload_session_id}",
             )
 
+        # Prefer the caller's etag (from original read) for true optimistic locking.
+        # Fall back to the etag obtained from the internal re-read.
+        effective_etag = etag if etag is not None else read_etag
+
         update_payload = dict(fields)
         update_payload.setdefault("updated_at", datetime.now(UTC))
         updated = existing.model_copy(update=update_payload)
         document = updated.model_dump(mode="json")
-        replaced = self._container.replace_item(
-            item=upload_session_id,
-            body=document,
-        )
-        return TripLog.model_validate(replaced)
+
+        replace_kwargs: dict[str, Any] = {"item": upload_session_id, "body": document}
+        if effective_etag is not None:
+            replace_kwargs["if_match"] = effective_etag
+
+        try:
+            replaced = self._container.replace_item(**replace_kwargs)
+        except CosmosHttpResponseError as exc:
+            if exc.status_code == _HTTP_PRECONDITION_FAILED:
+                raise CosmosConflictError(
+                    f"Concurrent modification on upload_session_id={upload_session_id}",
+                ) from exc
+            raise CosmosDbError(f"Cosmos replace failed: {exc}") from exc
+
+        new_etag: str | None = replaced.get("_etag") if isinstance(replaced, dict) else None
+        return TripLog.model_validate(replaced), new_etag
 
     @staticmethod
     def new_trip_log(

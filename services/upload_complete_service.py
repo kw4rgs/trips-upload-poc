@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
 from datetime import UTC, datetime
 
 from config import Settings, get_settings
@@ -32,6 +31,10 @@ FILE_NAME_TO_SOURCE: dict[str, TripSource] = {
 }
 
 
+class TripOwnershipError(Exception):
+    """Caller does not own the requested trip session."""
+
+
 class UploadCompleteService:
     """Validate uploaded blobs and publish trip events."""
 
@@ -53,21 +56,46 @@ class UploadCompleteService:
         *,
         request: UploadCompleteRequest,
         correlation_id: str,
+        caller_user_id: str,
     ) -> CompleteResponse:
-        """Validate uploaded files and publish metadata when successful."""
-        trip_log = self._cosmos.get_trip_log(request.route_id, request.upload_session_id)
+        """Validate uploaded files and publish metadata when all files pass.
+
+        Ownership is enforced: ``caller_user_id`` must match the ``user_id``
+        recorded on the trip log at session creation time.
+
+        A deterministic ``event_id`` (derived from ``upload_session_id``) is
+        stored on the trip log *before* publishing to Event Hub.  This allows
+        downstream consumers to deduplicate re-delivered events and makes the
+        publish step idempotent on retry.
+
+        Optimistic concurrency (etag) is threaded through every Cosmos write to
+        detect concurrent complete requests early and return 409.
+        """
+        trip_log, etag = self._cosmos.get_trip_log(request.route_id, request.upload_session_id)
         if trip_log is None:
             raise TripLogNotFoundError(
                 f"Trip log not found for route_id={request.route_id} "
                 f"upload_session_id={request.upload_session_id}",
             )
 
+        if trip_log.user_id != caller_user_id:
+            raise TripOwnershipError(
+                f"upload_session_id={request.upload_session_id} belongs to a different user",
+            )
+
         if trip_log.status == TripLogStatus.PUBLISHED:
             return self._build_idempotent_response(trip_log, correlation_id)
 
-        self._cosmos.update_trip_log(
+        # Deterministic event_id: same value on every retry so Event Hub
+        # consumers can deduplicate by event_id without extra state.
+        det_event_id = f"evt_{request.upload_session_id}"
+
+        # Mark VALIDATING using the original etag — any concurrent request
+        # will hit a 412 on this write and receive a 409 from the endpoint.
+        _, etag = self._cosmos.update_trip_log(
             request.route_id,
             request.upload_session_id,
+            etag=etag,
             status=TripLogStatus.VALIDATING,
         )
 
@@ -79,19 +107,26 @@ class UploadCompleteService:
         validation_status = ValidationStatus.VALIDATED if all_valid else ValidationStatus.FAILED
 
         source_flags = self._source_flags(file_results)
-        self._cosmos.update_trip_log(
+
+        # Store event_id on the trip log *before* publishing so that, if the
+        # publish succeeds but the PUBLISHED update fails, a retry can detect
+        # the deterministic event_id and skip a duplicate publish.
+        _, etag = self._cosmos.update_trip_log(
             request.route_id,
             request.upload_session_id,
+            etag=etag,
             status=TripLogStatus.VALIDATED if all_valid else TripLogStatus.FAILED,
             validation_status=validation_status.value,
+            event_id=det_event_id if all_valid else None,
             **source_flags,
         )
 
         if all_valid:
-            self._publish_event(trip_log, request, correlation_id, source_flags)
+            self._publish_event(trip_log, request, correlation_id, source_flags, det_event_id)
             self._cosmos.update_trip_log(
                 request.route_id,
                 request.upload_session_id,
+                etag=etag,
                 status=TripLogStatus.PUBLISHED,
             )
 
@@ -178,22 +213,22 @@ class UploadCompleteService:
         request: UploadCompleteRequest,
         correlation_id: str,
         source_flags: dict[str, bool],
+        event_id: str,
     ) -> None:
         available_sources = [
             TripSource(source_name.removesuffix("_exists"))
             for source_name, exists in source_flags.items()
             if exists
         ]
-        uploaded_at = datetime.now(UTC)
         event = TripEvent(
-            event_id=f"evt_{uuid.uuid4().hex[:12]}",
+            event_id=event_id,
             correlation_id=correlation_id,
-            trip_id=trip_log.upload_session_id.removeprefix("sess_"),
+            trip_id=trip_log.upload_session_id,
             route_id=request.route_id,
             user_id=trip_log.user_id,
             upload_session_id=request.upload_session_id,
             trip_date=trip_log.created_at.date(),
-            uploaded_at=uploaded_at,
+            uploaded_at=datetime.now(UTC),
             available_sources=available_sources,
             trip_storage_root=trip_log.trip_storage_root or "",
             trip_file_prefix=trip_log.trip_file_prefix or "",
