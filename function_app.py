@@ -1,5 +1,9 @@
 """Azure Functions entrypoint — registers API v1 blueprints."""
 
+from shared.telemetry import configure_telemetry
+
+configure_telemetry()
+
 import azure.functions as func
 
 from api.v1.health import health_bp
