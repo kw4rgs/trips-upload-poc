@@ -1,158 +1,209 @@
-# Azure Portal — Checklist de recursos (T01–T03)
+# Azure Portal — Tu to-do list (T01–T03)
 
-**Task ID:** trips-upload-poc  
-**Scope:** Infraestructura manual (Portal o Azure CLI) — sin Terraform  
-**Cuándo:** En paralelo o antes de desplegar la Function App (T12+)
+**Estado del código:** ✅ **T04–T18 completos** (repo listo para deploy)  
+**Tu trabajo pendiente:** ⬜ **T01–T03** — crear infra en Azure Portal y asignar roles MI  
+**Scope:** Manual (Portal o CLI) — sin Terraform
 
-Marca cada ítem cuando esté listo. Anota nombres reales si difieren del POC.
+Marca cada ítem. Anota nombres/IDs reales en la columna **Mis valores**.
 
 ---
 
-## Fase A — Base
+## Resumen rápido — orden de ejecución
+
+```
+1. Resource Group
+2. Storage Account + container landing
+3. Application Insights
+4. Function App (Python 3.13) + habilitar Managed Identity  ← anotar Object ID
+5. Cosmos DB (database + container)
+6. Event Hub (verificar existente o crear)
+7. Asignar 3 roles RBAC a la MI de la Function App
+8. Application Settings en Function App
+9. Deploy código (func azure functionapp publish)
+10. Validación manual (curl + App Insights)
+```
+
+---
+
+## Matriz RBAC — Managed Identity de la Function App
+
+Asignar **después** de crear la Function App (F3) y **antes** del deploy.
+
+| # | Recurso Azure | Rol RBAC | Scope (asignar en) | Para qué lo usa el código |
+|---|---------------|----------|--------------------|---------------------------|
+| R1 | Storage Account `satripsuploadpoc` | **Storage Blob Data Contributor** | Cuenta de storage | User Delegation SAS, validar blobs |
+| R2 | Cosmos DB account | **Cosmos DB Built-in Data Contributor** | Cuenta Cosmos DB | CRUD `trip_ingestion_log` |
+| R3 | Event Hubs namespace `backendnodeeventhub` | **Azure Event Hubs Data Sender** | Namespace (o el hub) | `publish_trip_event()` |
+
+**Portal:** Resource → Access control (IAM) → Add role assignment → Managed identity → seleccionar `func-trips-upload-poc`.
+
+**CLI (ejemplo):**
+```bash
+# Variables — reemplazar con tus IDs
+FA_PRINCIPAL_ID="<object-id-managed-identity>"
+STORAGE_ID="/subscriptions/<sub>/resourceGroups/rg-g2k-suite-labs/providers/Microsoft.Storage/storageAccounts/satripsuploadpoc"
+COSMOS_ID="/subscriptions/<sub>/resourceGroups/rg-g2k-suite-labs/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-trips-upload-poc"
+EH_NAMESPACE_ID="/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.EventHub/namespaces/backendnodeeventhub"
+
+az role assignment create --assignee-object-id $FA_PRINCIPAL_ID --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope $STORAGE_ID
+az role assignment create --assignee-object-id $FA_PRINCIPAL_ID --assignee-principal-type ServicePrincipal --role "Cosmos DB Built-in Data Contributor" --scope $COSMOS_ID
+az role assignment create --assignee-object-id $FA_PRINCIPAL_ID --assignee-principal-type ServicePrincipal --role "Azure Event Hubs Data Sender" --scope $EH_NAMESPACE_ID
+```
+
+---
+
+## Fase A — Resource Group (T01)
 
 - [ ] **A1. Resource Group**
   - Nombre sugerido: `rg-g2k-suite-labs`
-  - Región: la misma que el resto de recursos G2K/labs
-  - Tags opcionales: `project=trips-upload-poc`, `env=lab`
+  - Región: misma que el resto de recursos G2K/labs
+  - Tags: `project=trips-upload-poc`, `env=lab`
+  - **Mis valores:** ___________________________
 
 ---
 
-## Fase B — Storage (blobs de viaje)
+## Fase B — Storage (T01)
 
 - [ ] **B1. Storage Account**
-  - Nombre sugerido: `satripsuploadpoc` (globalmente único, solo minúsculas y números)
-  - Performance: Standard
-  - Redundancy: LRS (suficiente para POC)
-  - Habilitar **Blob Storage**
+  - Nombre: `satripsuploadpoc` (globalmente único)
+  - Performance: Standard · Redundancy: LRS
+  - **Mis valores:** ___________________________
 
-- [ ] **B2. Container**
-  - Nombre: `landing`
-  - Access level: Private
+- [ ] **B2. Container `landing`**
+  - Access level: **Private**
 
-- [ ] **B3. Permisos para Function App (después de crear FA)**
-  - Managed Identity de la Function App → rol **Storage Blob Data Contributor** en esta cuenta
-  - (Necesario para User Delegation SAS)
+- [ ] **B3. Rol R1** — MI Function App → **Storage Blob Data Contributor** en B1
+
+- [ ] **B4. Anotar connection string** (para `AzureWebJobsStorage` runtime Functions)
 
 ---
 
-## Fase C — Cosmos DB (metadata `trip_ingestion_log`)
+## Fase C — Cosmos DB (T02)
 
-- [ ] **C1. Azure Cosmos DB account**
+- [ ] **C1. Cosmos DB account**
   - API: **Core (SQL)**
-  - Nombre: elegir uno (ej. `cosmos-trips-upload-poc`)
-  - Capacity mode: Serverless o Provisioned (POC: serverless si está disponible en la región)
+  - Nombre sugerido: `cosmos-trips-upload-poc`
+  - Mode: Serverless (POC) o Provisioned
+  - **Mis valores:** ___________________________
 
-- [ ] **C2. Database**
-  - Nombre sugerido: `trips`
+- [ ] **C2. Database:** `trips`
 
-- [ ] **C3. Container**
-  - Nombre: `trip_ingestion_log`
-  - Partition key: `/route_id`
-  - Throughput: default / serverless
+- [ ] **C3. Container:** `trip_ingestion_log`
+  - Partition key: **`/route_id`**
 
-- [ ] **C4. Permisos Function App**
-  - MI → rol **Cosmos DB Built-in Data Contributor** (o equivalente para SQL API con MI)
+- [ ] **C4. Rol R2** — MI Function App → **Cosmos DB Built-in Data Contributor** en C1
+
+- [ ] **C5. Anotar** `COSMOS_ENDPOINT` (Cosmos → Keys → URI)
 
 ---
 
-## Fase D — Event Hub (verificar existente)
+## Fase D — Event Hub (T03)
 
-- [ ] **D1. Namespace**
-  - Verificar que existe: `backendnodeeventhub`
-  - Si no existe: crear Event Hubs namespace Standard
+- [ ] **D1. Namespace** — verificar `backendnodeeventhub` (puede estar en otro RG)
 
-- [ ] **D2. Event Hub**
-  - Nombre: `trip-processing-eventhub`
-  - Partitions: 2–4 (POC)
+- [ ] **D2. Event Hub:** `trip-processing-eventhub` (2–4 partitions)
 
-- [ ] **D3. Consumer groups** (para workers futuros; no los implementa este POC)
+- [ ] **D3. Consumer groups** (workers futuros — no los implementa este POC)
   - [ ] `gps-consumer`
   - [ ] `imu-consumer`
   - [ ] `bt-consumer`
 
-- [ ] **D4. Permisos Function App**
-  - MI → rol **Azure Event Hubs Data Sender** en el namespace o hub
+- [ ] **D4. Rol R3** — MI Function App → **Azure Event Hubs Data Sender** en namespace
 
-- [ ] **D5. Connection info**
-  - Anotar namespace FQDN y nombre del hub para `local.settings.json`
+- [ ] **D5. Anotar** `EVENTHUB_FULLY_QUALIFIED_NAMESPACE` = `{namespace}.servicebus.windows.net`
 
 ---
 
-## Fase E — Observabilidad
+## Fase E — Application Insights (T03)
 
-- [ ] **E1. Application Insights**
-  - Nombre sugerido: `ai-trips-upload-poc`
-  - Workspace: Log Analytics (crear nuevo o usar existente)
+- [ ] **E1. Application Insights:** `ai-trips-upload-poc`
+  - Vinculado a Log Analytics workspace
 
-- [ ] **E2. Copiar connection string**
-  - Guardar `APPLICATIONINSIGHTS_CONNECTION_STRING` para configuración local/deploy
+- [ ] **E2. Anotar** `APPLICATIONINSIGHTS_CONNECTION_STRING`
 
 ---
 
-## Fase F — Function App (Upload Service)
+## Fase F — Function App (T03)
 
-- [ ] **F1. Function App**
-  - Nombre sugerido: `func-trips-upload-poc` (único globalmente)
-  - Runtime: **Python 3.13**
-  - Plan: Consumption (Y1) o Premium según política del lab
-  - OS: Linux
-  - Vincular a Application Insights (E1)
+- [ ] **F1. Crear Function App**
+  - Nombre: `func-trips-upload-poc`
+  - Runtime: **Python 3.13** · OS: **Linux**
+  - Plan: Consumption (Y1) o Premium (lab)
+  - Storage runtime: cuenta B1
+  - Vincular App Insights E1
 
-- [ ] **F2. Storage para Functions runtime**
-  - Usar la misma `satripsuploadpoc` o cuenta dedicada (requerido por Azure Functions)
+- [ ] **F2. Managed Identity**
+  - Habilitar **System-assigned**
+  - Anotar **Object (principal) ID:** ___________________________
 
-- [ ] **F3. Managed Identity**
-  - Habilitar **System-assigned managed identity**
-  - Anotar `principalId` / Object ID para asignar roles (B3, C4, D4)
+- [ ] **F3. Asignar roles R1, R2, R3** (si no lo hiciste arriba)
 
-- [ ] **F4. Application settings** (en Portal → Configuration, post-deploy)
-  - `STORAGE_ACCOUNT_NAME`
-  - `STORAGE_CONTAINER=landing`
-  - `COSMOS_ENDPOINT`
-  - `COSMOS_DATABASE=trips`
-  - `COSMOS_CONTAINER=trip_ingestion_log`
-  - `EVENTHUB_NAME=trip-processing-eventhub`
-  - `EVENTHUB_FULLY_QUALIFIED_NAMESPACE` (si usás MI sin connection string)
-  - `JWT_MOCK_SECRET` (POC)
-  - `SAS_TTL_MINUTES=15`
-  - `APPLICATIONINSIGHTS_CONNECTION_STRING`
+- [ ] **F4. Application Settings** (Configuration)
 
-- [ ] **F5. CORS** (si la app móvil llama directo a la API en lab)
-  - Configurar orígenes permitidos en Function App → CORS
+| Setting | Valor POC | Mis valores |
+|---------|-----------|-------------|
+| `FUNCTIONS_WORKER_RUNTIME` | `python` | |
+| `AzureWebJobsStorage` | Connection string storage | |
+| `STORAGE_ACCOUNT_NAME` | `satripsuploadpoc` | |
+| `STORAGE_CONTAINER` | `landing` | |
+| `COSMOS_ENDPOINT` | URI Cosmos | |
+| `COSMOS_DATABASE` | `trips` | |
+| `COSMOS_CONTAINER` | `trip_ingestion_log` | |
+| `EVENTHUB_NAME` | `trip-processing-eventhub` | |
+| `EVENTHUB_FULLY_QUALIFIED_NAMESPACE` | `{ns}.servicebus.windows.net` | |
+| `JWT_MOCK_SECRET` | Secreto fuerte (≥32 chars) | |
+| `JWT_MOCK_USER_ID` | `user456` (POC) | |
+| `SAS_TTL_MINUTES` | `15` | |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | De E2 | |
 
----
+- [ ] **F5. CORS** (opcional — si app móvil llama directo al lab)
 
-## Fase G — Validación manual (DoD infra)
-
-- [ ] **G1.** Desde Portal: container `landing` visible y accesible con MI de prueba
-- [ ] **G2.** Cosmos: insertar/leer un documento de prueba en `trip_ingestion_log`
-- [ ] **G3.** Event Hub: ver métricas de namespace; permiso de send OK
-- [ ] **G4.** Application Insights: recibir un evento de prueba desde Function App
-- [ ] **G5.** Todos los roles MI asignados (Blob, Cosmos, Event Hubs)
-
----
-
-## Valores para copiar a `local.settings.json`
-
-Cuando tengas los recursos, completá (ver `local.settings.json.example` en la raíz del repo):
-
-| Variable | Dónde obtenerla |
-|----------|-----------------|
-| `AzureWebJobsStorage` | Connection string cuenta storage (runtime Functions) |
-| `STORAGE_ACCOUNT_NAME` | Nombre cuenta blobs |
-| `COSMOS_ENDPOINT` | Cosmos → Keys → URI |
-| `COSMOS_DATABASE` | `trips` |
-| `COSMOS_CONTAINER` | `trip_ingestion_log` |
-| `EVENTHUB_NAME` | `trip-processing-eventhub` |
-| `EVENTHUB_FULLY_QUALIFIED_NAMESPACE` | `{namespace}.servicebus.windows.net` |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | App Insights → Properties |
+- [ ] **F6. Deploy código**
+  ```bash
+  func azure functionapp publish func-trips-upload-poc
+  ```
 
 ---
 
-## Notas
+## Fase G — Validación (DoD infra)
 
-- **Event Hub existente:** Si `backendnodeeventhub` ya está en otro RG, solo verificá permisos; no hace falta recrearlo.
-- **POC no incluye workers:** Los consumer groups son para validar que el hub está listo; el código del POC termina al publicar el evento.
-- **Orden recomendado:** A → B → E → F (MI) → C → D → asignar roles → G
+- [ ] **G1.** `GET /api/health` → 200
+- [ ] **G2.** `POST /api/upload/session` con JWT mock → 201 + SAS URLs
+- [ ] **G3.** Upload blob vía SAS + `POST /api/upload/complete` → 200
+- [ ] **G4.** Documento visible en Cosmos `trip_ingestion_log`
+- [ ] **G5.** Evento visible en Event Hub (metrics / explorer)
+- [ ] **G6.** Traces en App Insights con `correlation_id`
+- [ ] **G7.** IAM: 3 role assignments activos para la MI
 
-*Checklist alineado con spec.md, plan.md y tasks T01–T03*
+Ver curl detallado en [`runbook.md`](runbook.md).
+
+---
+
+## Local dev (opcional — sin Azure completo)
+
+| Emulador | Puerto | Para qué |
+|----------|--------|----------|
+| Azurite | 10000 | Blob (`AzureWebJobsStorage`) |
+| Cosmos Emulator | 8081 | Cosmos CRUD |
+
+Tests integration hacen skip si emuladores no están corriendo.
+
+---
+
+## Qué NO tenés que crear
+
+- ❌ Workers GPS / IMU / BT
+- ❌ Terraform / IaC
+- ❌ Auth0 / Entra (POC usa JWT mock)
+- ❌ API Management / Front Door (opcional futuro)
+
+---
+
+## Estado tasks código vs Azure
+
+| Tasks | Quién | Estado |
+|-------|-------|--------|
+| T01–T03 | **Vos** — Azure Portal | ⬜ Pendiente |
+| T04–T18 | Repo / CI | ✅ Completo |
+
+*Última actualización: post T18 — ver [`history.md`](history.md)*
