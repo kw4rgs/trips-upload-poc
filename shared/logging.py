@@ -11,6 +11,13 @@ from shared.correlation import get_correlation_id
 _CONFIGURED = False
 
 
+def reset_logging() -> None:
+    """Reset logging configuration (used in tests)."""
+    global _CONFIGURED
+    _CONFIGURED = False
+    logging.getLogger().handlers.clear()
+
+
 class StructuredJsonFormatter(logging.Formatter):
     """Emit one JSON object per log line for App Insights ingestion."""
 

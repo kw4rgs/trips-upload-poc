@@ -362,7 +362,7 @@ Ver detalle completo en [`docs/implementation-plan.md`](docs/implementation-plan
 | Fase | Tasks | Estado |
 |------|-------|--------|
 | 1 — Infra Azure | T01–T03 | Pendiente (Portal) |
-| 2 — Scaffold | T04–T06 | T04 ✅ |
+| 2 — Scaffold | T04–T06 | ✅ Completo |
 | 3 — Modelos | T07 | Pendiente |
 | 4 — Servicios + API | T08–T11 | Pendiente |
 | 5 — Deploy + observabilidad | T12–T14 | Pendiente |
@@ -373,7 +373,9 @@ Ver detalle completo en [`docs/implementation-plan.md`](docs/implementation-plan
 ## Testing
 
 ```bash
-# Todos los tests (disponible desde T06)
+pip install -r requirements-dev.txt
+
+# Todos los tests
 pytest
 
 # Por capa

@@ -58,7 +58,7 @@
 - **AC:** Settings carga env; log format constitution-compliant
 
 ### T06 — Test harness
-- [ ] `tests/conftest.py`, pytest config
+- [x] `tests/conftest.py`, pytest config
 - **Effort:** 1h | **Deps:** T04
 - **AC:** `pytest` baseline green
 
