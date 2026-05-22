@@ -40,48 +40,43 @@ services:
       - cosmos-data:/tmp/cosmos
 
   # ---------------------------------------------------------------------------
-  # Redpanda — Kafka-compatible broker (ARM-native, single container, no ZooKeeper)
+  # Apache Kafka (KRaft mode — no ZooKeeper, ARM64 native via Bitnami image)
   # Kafka API: localhost:9092
-  # Admin / Console UI: http://localhost:8080
   # ---------------------------------------------------------------------------
-  redpanda:
-    image: docker.redpanda.com/redpandadata/redpanda:latest
-    container_name: trips-redpanda
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: trips-kafka
     restart: unless-stopped
     ports:
       - "9092:9092"     # Kafka API (used by KafkaPublisher)
-      - "9644:9644"     # Admin API
-      - "8080:8080"     # Redpanda Console UI
-    command:
-      - redpanda
-      - start
-      - --overprovisioned
-      - --smp=1
-      - --memory=256M
-      - --reserve-memory=0M
-      - --node-id=0
-      - --check=false
-      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
-      - --advertise-kafka-addr=PLAINTEXT://localhost:9092
-      - --pandaproxy-addr=0.0.0.0:8082
-      - --advertise-pandaproxy-addr=localhost:8082
+    environment:
+      # KRaft — no ZooKeeper required
+      KAFKA_CFG_NODE_ID: "1"
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
 
   # ---------------------------------------------------------------------------
-  # Redpanda Console — optional web UI for inspecting topics and messages
+  # kafka-ui — web UI for inspecting topics, messages, consumer groups
   # Accessible at http://localhost:8090
   # ---------------------------------------------------------------------------
-  redpanda-console:
-    image: docker.redpanda.com/redpandadata/console:latest
-    container_name: trips-redpanda-console
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: trips-kafka-ui
     restart: unless-stopped
     depends_on:
-      - redpanda
+      - kafka
     ports:
       - "8090:8080"
     environment:
-      CONFIG_FILEPATH: /etc/redpanda-console/config.yaml
-    volumes:
-      - ./docker/redpanda-console-config.yaml:/etc/redpanda-console/config.yaml:ro
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
 
 volumes:
   azurite-data:
