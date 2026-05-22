@@ -66,6 +66,12 @@ def build_trip_file_name(
     return f"{ts}_{user_id}_{route_id}_{SOURCE_FILE_NAMES[source]}"
 
 
+def build_trip_file_prefix(user_id: str, route_id: str, timestamp: datetime) -> str:
+    """Build the shared trip file prefix used across sources."""
+    ts = timestamp.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+    return f"{ts}_{user_id}_{route_id}"
+
+
 def build_blob_path(source: TripSource, timestamp: datetime, file_name: str) -> str:
     """Build the blob path inside the landing container."""
     ts = timestamp.astimezone(UTC)
