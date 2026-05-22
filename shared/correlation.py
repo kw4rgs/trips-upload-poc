@@ -21,6 +21,11 @@ def set_correlation_id(correlation_id: str) -> None:
     _correlation_id.set(correlation_id)
 
 
+def reset_correlation_id() -> None:
+    """Clear correlation ID from the current execution context."""
+    _correlation_id.set(None)
+
+
 def bind_correlation_id(correlation_id: str | None = None) -> str:
     """Ensure a correlation ID exists in context and return it."""
     resolved = correlation_id or get_correlation_id() or generate_correlation_id()
