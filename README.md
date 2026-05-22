@@ -20,6 +20,7 @@
 - [Stack tecnológico](#stack-tecnológico)
 - [Requisitos previos](#requisitos-previos)
 - [Inicio rápido](#inicio-rápido)
+- [Stack local con Docker](#stack-local-con-docker)
 - [Configuración](#configuración)
 - [Azure](#azure)
 - [Desarrollo](#desarrollo)
@@ -277,29 +278,126 @@ curl http://localhost:7071/api/health
 
 ---
 
+## Stack local con Docker
+
+El proyecto soporta dos entornos de ejecución seleccionables por variables de entorno. No se necesita modificar código para cambiar entre ellos.
+
+### Routing por entorno
+
+| Variable | `local` | `production` |
+|----------|---------|-------------|
+| `ENVIRONMENT` | `local` | `production` |
+| **Blob Storage** | Azurite (Docker) | Azure Blob Storage + MI |
+| **Cosmos DB** | Cosmos emulator (Docker) | Azure Cosmos DB + MI |
+| **Mensajería** | Apache Kafka (Docker) | Azure Event Hub + MI |
+| `USE_AZURITE` | `true` | no seteada |
+| `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | — (no se usa) |
+| `EVENTHUB_FULLY_QUALIFIED_NAMESPACE` | — (no se usa) | `{ns}.servicebus.windows.net` |
+
+En `production`, todos los servicios de Azure usan **Managed Identity** — sin claves ni connection strings en el código.
+
+### Levantar el stack local
+
+```bash
+# Copiar template de variables
+cp .env.local.example .env
+
+# Levantar todos los servicios
+docker compose up -d
+```
+
+Servicios incluidos en `docker-compose.yml`:
+
+| Contenedor | Imagen | Puerto | Función |
+|-----------|--------|--------|---------|
+| `trips-azurite` | `mcr.microsoft.com/azure-storage/azurite` | `10000` | Blob Storage emulator |
+| `trips-cosmos` | `mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator` | `8081` | Cosmos DB emulator (QEMU x86) |
+| `trips-cosmos-ui` | `nginx:alpine` | `8082` | Redirect al Cosmos Explorer |
+| `trips-kafka` | `apache/kafka` | `9092` | Kafka broker (KRaft, ARM64 nativo) |
+| `trips-kafka-ui` | `provectuslabs/kafka-ui` | `8090` | Kafka web UI |
+
+### UIs de los servicios
+
+| Servicio | URL | Notas |
+|----------|-----|-------|
+| **Cosmos Explorer** | `https://localhost:8081/_explorer/index.html` | Aceptar cert auto-firmado en el browser |
+| *(shortcut)* | `http://localhost:8082` | Redirect automático al Explorer |
+| **Kafka UI** | `http://localhost:8090` | Topics, mensajes, consumer groups |
+
+> En Docker Desktop, los puertos `8082` y `8090` son clickeables y abren las UIs directamente.
+
+### Verificar que el stack está listo
+
+```bash
+# Cosmos — devuelve 200 cuando está listo (~60s en arrancar)
+curl -sk -o /dev/null -w "%{http_code}" https://localhost:8081/_explorer/index.html
+
+# Kafka — lista topics
+docker exec trips-kafka /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 --list
+
+# Azurite — verifica el blob endpoint
+curl -s -o /dev/null -w "%{http_code}" http://localhost:10000/devstoreaccount1
+```
+
+### Levantar la Function App en modo local
+
+```bash
+# Con el stack de Docker corriendo:
+func start
+```
+
+La Function App lee las variables de `.env` (o `local.settings.json`) y usa automáticamente los emuladores locales con `ENVIRONMENT=local`.
+
+---
+
 ## Configuración
 
 Variables en `local.settings.json` (local) o **Application Settings** (Azure):
 
+**Routing de entorno**
+
+| Variable | Descripción | Local | Producción |
+|----------|-------------|-------|-----------|
+| `ENVIRONMENT` | Entorno activo | `local` | `production` |
+| `USE_AZURITE` | Activar Azurite para blob | `true` | *(omitir)* |
+
+**Blob Storage**
+
 | Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
-| `AzureWebJobsStorage` | Storage para runtime Functions | Connection string |
-| `FUNCTIONS_WORKER_RUNTIME` | Runtime | `python` |
-| `STORAGE_ACCOUNT_NAME` | Cuenta Blob de viajes | `satripsuploadpoc` |
+| `AzureWebJobsStorage` | Runtime Functions + Azurite conn string | Connection string |
+| `STORAGE_ACCOUNT_NAME` | Cuenta Blob (prod) | `satripsuploadpoc` |
 | `STORAGE_CONTAINER` | Container de landing | `landing` |
+
+**Cosmos DB**
+
+| Variable | Descripción | Ejemplo |
+|----------|-------------|---------|
 | `COSMOS_ENDPOINT` | URI Cosmos DB | `https://….documents.azure.com:443/` |
 | `COSMOS_DATABASE` | Database | `trips` |
 | `COSMOS_CONTAINER` | Container metadata | `trip_ingestion_log` |
-| `EVENTHUB_NAME` | Event Hub | `trip-processing-eventhub` |
-| `EVENTHUB_FULLY_QUALIFIED_NAMESPACE` | Namespace FQDN | `{ns}.servicebus.windows.net` |
-| `JWT_MOCK_SECRET` | Secreto JWT POC | *(dev only)* |
-| `JWT_MOCK_USER_ID` | User ID por defecto POC | `user456` |
-| `SAS_TTL_MINUTES` | Expiración SAS | `15` |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Telemetría | Connection string |
+
+**Mensajería**
+
+| Variable | Descripción | Entorno |
+|----------|-------------|---------|
+| `KAFKA_BOOTSTRAP_SERVERS` | Broker Kafka local | `local` |
+| `KAFKA_TOPIC` | Topic de eventos | `local` |
+| `EVENTHUB_NAME` | Event Hub | `production` |
+| `EVENTHUB_FULLY_QUALIFIED_NAMESPACE` | Namespace FQDN | `production` |
+
+**Auth y observabilidad**
+
+| Variable | Descripción |
+|----------|-------------|
+| `JWT_MOCK_SECRET` | Secreto JWT POC |
+| `SAS_TTL_MINUTES` | Expiración SAS (minutos) |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Telemetría App Insights |
 
 En Azure se usa **Managed Identity** para Blob, Cosmos y Event Hub — nunca Storage Keys en producción.
 
-Plantilla completa: [`local.settings.json.example`](local.settings.json.example)
+Templates: [`local.settings.json.example`](local.settings.json.example) · [`.env.local.example`](.env.local.example)
 
 ---
 
