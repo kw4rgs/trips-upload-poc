@@ -52,8 +52,8 @@
 - **AC:** `func start` sin errores de import ✅
 
 ### T05 — Config y logging
-- [ ] Completar `config.py` (Pydantic Settings)
-- [ ] `shared/logging.py` + `shared/correlation.py`
+- [x] Completar `config.py` (Pydantic Settings)
+- [x] `shared/logging.py` + `shared/correlation.py`
 - **Effort:** 1.5h | **Deps:** T04
 - **AC:** Settings carga env; log format constitution-compliant
 
