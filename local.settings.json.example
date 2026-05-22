@@ -13,7 +13,7 @@
     "STORAGE_CONTAINER": "landing",
 
     "_comment_cosmos": "Cosmos DB emulator endpoint",
-    "COSMOS_ENDPOINT": "https://localhost:8081/",
+    "COSMOS_ENDPOINT": "http://localhost:8081/",
     "COSMOS_DATABASE": "trips",
     "COSMOS_CONTAINER": "trip_ingestion_log",
 
