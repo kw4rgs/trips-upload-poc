@@ -90,7 +90,7 @@
 - **AC:** Integration test SAS + exists contra Azurite
 
 ### T10 — CosmosService (Épica 4)
-- [ ] `create_trip_log()`, `update_trip_log()`, `get_trip_log()`, `trip_exists()`
+- [x] `create_trip_log()`, `update_trip_log()`, `get_trip_log()`, `trip_exists()`
 - **Effort:** 3h | **Deps:** T07
 - **AC:** Integration test CRUD (emulator o mock)
 
