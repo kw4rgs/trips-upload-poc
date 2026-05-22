@@ -93,7 +93,7 @@ Marca cada ítem cuando esté listo. Anota nombres reales si difieren del POC.
 
 - [ ] **F1. Function App**
   - Nombre sugerido: `func-trips-upload-poc` (único globalmente)
-  - Runtime: **Python 3.11**
+  - Runtime: **Python 3.13**
   - Plan: Consumption (Y1) o Premium según política del lab
   - OS: Linux
   - Vincular a Application Insights (E1)

@@ -51,7 +51,7 @@ flowchart TB
 
 | Layer | Technology | Rationale |
 |-------|------------|-----------|
-| Runtime | Python 3.11+ | SDD stack |
+| Runtime | Python 3.13 | SDD stack |
 | Functions | Azure Functions v4 (Python model) | HTTP triggers |
 | Blob | azure-storage-blob + User Delegation SAS | FR-2, FR-3 |
 | Metadata | azure-cosmos | implementation-plan §2 |

@@ -2,7 +2,7 @@
 
 > Gateway serverless en Azure Functions para ingestión de viajes: SAS directo a Blob, metadata en Cosmos DB y publicación en Event Hub.
 
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Azure Functions](https://img.shields.io/badge/Azure_Functions-v4-0062AD?style=flat-square&logo=microsoftazure&logoColor=white)](https://learn.microsoft.com/azure/azure-functions/)
 [![Pydantic](https://img.shields.io/badge/Pydantic-v2-E92063?style=flat-square)](https://docs.pydantic.dev/)
 [![Status](https://img.shields.io/badge/Status-POC_in_progress-yellow?style=flat-square)]()
@@ -230,7 +230,7 @@ Fuentes: `gps`, `imu`, `bt`, `metadata`. El cliente **no construye rutas** — l
 
 | Componente | Tecnología |
 |------------|------------|
-| Runtime | Python 3.11+ |
+| Runtime | Python 3.13 |
 | Compute | Azure Functions v4 (Consumption) |
 | HTTP model | Blueprints (programming model v2) |
 | Blob | Azure Blob Storage + User Delegation SAS |
@@ -246,7 +246,7 @@ Fuentes: `gps`, `imu`, `bt`, `metadata`. El cliente **no construye rutas** — l
 
 ## Requisitos previos
 
-- **Python 3.11+**
+- **Python 3.13**
 - **[Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)**
 - **Cuenta Azure** con recursos del POC (ver checklist abajo)
 - Opcional local: [Azurite](https://learn.microsoft.com/azure/storage/common/storage-use-azurite) para emular Blob Storage
@@ -259,7 +259,7 @@ Fuentes: `gps`, `imu`, `bt`, `metadata`. El cliente **no construye rutas** — l
 # 1. Clonar e instalar dependencias
 git clone <repo-url>
 cd trips_upload
-python -m venv .venv
+python3.13 -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
@@ -318,7 +318,7 @@ Resumen:
 | Cosmos DB | SQL API · DB `trips` · container `trip_ingestion_log` |
 | Event Hub | `backendnodeeventhub` / `trip-processing-eventhub` |
 | Application Insights | `ai-trips-upload-poc` |
-| Function App | `func-trips-upload-poc` · Python 3.11 · Linux |
+| Function App | `func-trips-upload-poc` · Python 3.13 · Linux |
 
 Roles Managed Identity: **Storage Blob Data Contributor**, **Cosmos DB Built-in Data Contributor**, **Azure Event Hubs Data Sender**.
 
