@@ -24,6 +24,20 @@ Registro cronológico de cambios del repositorio desde el inicio del POC.
 | `1038e9c` | 2026-05-22 | T15 | Structured HTTP errors |
 | `c598e50` | 2026-05-22 | T16–T18 | E2E test, runbook, README final |
 | `c4b8da5` | 2026-05-22 | FX-01–05 | Security & correctness fixes: JWT ownership, atomic publish, Cosmos etag, health probe, 503 sanitization |
+| `d1b52f6` | 2026-05-22 | — | History metadata for FX-01–05 |
+| `3a8d68f` | 2026-05-22 | v1.1.0 | Local stack abstraction — Kafka + docker-compose |
+| `dc7467e` | 2026-05-22 | — | Cosmos emulator amd64 for Apple Silicon (Rosetta) |
+| `4fbd118` | 2026-05-22 | — | Cosmos emulator vnext-preview (ARM64 native) |
+| `d8fc77f` | 2026-05-22 | — | Cosmos vnext HTTP on 8081 (no TLS) |
+| `db9804b` | 2026-05-22 | — | Revert Cosmos to GA emulator + Explorer UI |
+| `8940c3e` | 2026-05-22 | — | Bitnami Kafka KRaft + kafka-ui (ARM64) |
+| `7674cd1` | 2026-05-22 | — | Switch to apache/kafka official image (KRaft) |
+| `bf7ed3a` | 2026-05-22 | — | Kafka internal/external listeners for kafka-ui |
+| `2b18a18` | 2026-05-22 | — | cosmos-ui nginx redirect for Docker Desktop |
+| `fadbc36` | 2026-05-22 | — | Remove unused Cosmos gateway port 8900 |
+| `292b1fc` | 2026-05-22 | — | README local Docker stack, env routing, UIs |
+| `1917b16` | 2026-05-26 | — | Local predefined token auth (`JWT_LOCAL_TOKEN`) |
+| `f8b1ca0` | 2026-05-26 | — | Sample trip uploads (May/June 2026) + manifests |
 
 ---
 

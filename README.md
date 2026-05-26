@@ -25,7 +25,8 @@
 - [Azure](#azure)
 - [Desarrollo](#desarrollo)
 - [Testing](#testing)
-- [Roadmap](#roadmap)
+- [Prueba manual (Insomnia)](#prueba-manual-insomnia)
+- [Identificadores e idempotencia](#identificadores-e-idempotencia)
 - [Documentación](#documentación)
 - [Alcance del POC](#alcance-del-poc)
 
@@ -134,7 +135,10 @@ sequenceDiagram
 RECEIVED → VALIDATING → VALIDATED → PUBLISHED → (downstream) PROCESSING → SUCCESS | FAILED
 ```
 
-Partition key Cosmos DB: `/route_id`
+Partition key Cosmos DB: `/route_id`  
+Document id: `upload_session_id`
+
+Cada viaje sube **exactamente 4 archivos** (1 GPS, 1 IMU, 1 BT, 1 metadata). Ver [`samples/`](samples/) para ejemplos.
 
 ---
 
@@ -153,7 +157,11 @@ trips_upload/
 │   ├── auth.py                  # JWT mock validation
 │   ├── blob_storage.py          # SAS, exists, properties
 │   ├── cosmos_db.py             # trip_ingestion_log CRUD
-│   └── event_hub.py             # publish_trip_event
+│   ├── event_hub.py             # publish_trip_event (prod)
+│   ├── kafka_publisher.py       # publish_trip_event (local)
+│   ├── messaging_factory.py     # selecciona Kafka vs Event Hub por ENVIRONMENT
+│   ├── upload_session_service.py
+│   └── upload_complete_service.py
 │
 ├── models/                      # Schemas Pydantic v2
 │   ├── session.py
@@ -171,7 +179,9 @@ trips_upload/
 │   ├── integration/
 │   └── e2e/
 │
+├── samples/                     # Archivos de ejemplo + manifest.json por viaje
 ├── docs/                        # Documentación del proyecto
+├── docker-compose.yml           # Azurite, Cosmos emulator, Kafka
 ├── host.json
 ├── requirements.txt
 └── local.settings.json.example
@@ -204,18 +214,20 @@ Para agregar un endpoint: crear `api/v1/<nombre>.py` con un `bp = func.Blueprint
 | Método | Ruta | Descripción | Estado |
 |--------|------|-------------|--------|
 | `GET` | `/api/health` | Liveness probe | ✅ Implementado |
-| `POST` | `/api/upload/session` | Crear sesión, SAS URLs, trip log | 🚧 T08+ |
-| `POST` | `/api/upload/complete` | Validar blobs, publicar evento | 🚧 T09+ |
+| `POST` | `/api/upload/session` | Crear sesión, SAS URLs, trip log | ✅ Implementado |
+| `POST` | `/api/upload/complete` | Validar blobs, publicar evento | ✅ Implementado |
 
 ### Autenticación (POC)
 
 Todos los endpoints de upload requieren header:
 
 ```
-Authorization: Bearer <jwt_mock_token>
+Authorization: Bearer <token>
 ```
 
-En POC se usa JWT mock configurable (`JWT_MOCK_SECRET`). Evolución prevista: Auth0, Firebase o Microsoft Entra ID.
+**Entorno local (`ENVIRONMENT=local`):** token fijo sin generar JWT — usa el valor de `JWT_LOCAL_TOKEN` (default `local-dev-token`). El `user_id` viene de `JWT_MOCK_USER_ID`.
+
+**Producción / otros entornos:** JWT mock firmado con `JWT_MOCK_SECRET` (HS256). Evolución prevista: Auth0, Firebase o Microsoft Entra ID.
 
 ### Convención de blobs
 
@@ -236,7 +248,7 @@ Fuentes: `gps`, `imu`, `bt`, `metadata`. El cliente **no construye rutas** — l
 | HTTP model | Blueprints (programming model v2) |
 | Blob | Azure Blob Storage + User Delegation SAS |
 | Metadata | Azure Cosmos DB (SQL API) |
-| Messaging | Azure Event Hub |
+| Messaging | Azure Event Hub (prod) · Kafka (local) |
 | Models / Config | Pydantic v2 · pydantic-settings |
 | Auth (POC) | JWT mock |
 | Observabilidad | Application Insights + logging estructurado |
@@ -349,6 +361,24 @@ func start
 
 La Function App lee las variables de `.env` (o `local.settings.json`) y usa automáticamente los emuladores locales con `ENVIRONMENT=local`.
 
+### Kafka local ≈ Event Hub producción
+
+En local, `services/messaging_factory.py` publica el mismo JSON `TripEvent` en Kafka (`trip-processing`). En producción usa Event Hub (`trip-processing-eventhub`) con Managed Identity. El contrato del mensaje es idéntico; solo cambia el broker y el SDK.
+
+**Importante:** consumir mensajes en Kafka/Event Hub **no** actualiza Cosmos DB. Los workers downstream (fuera de alcance) serían quienes procesen archivos y avancen el estado del viaje.
+
+### Troubleshooting local
+
+| Síntoma | Causa habitual | Qué hacer |
+|---------|----------------|-----------|
+| Cosmos timeout a IP `172.x` | Emulator anuncia IP Docker interna | Usar `ENVIRONMENT=local` (el código desactiva endpoint discovery) y `AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE=127.0.0.1` en docker-compose |
+| Cosmos 404 "Owner resource does not exist" | DB/container no creados | El servicio los provisiona al primer uso; reiniciar `func start` tras levantar Cosmos |
+| Azurite "API version not supported" | SDK más nuevo que Azurite | El código fija `2023-11-03` en modo local |
+| PUT 404 ContainerNotFound | Container `landing` ausente | Se crea en session; verificar `STORAGE_CONTAINER=landing` |
+| Complete 404 "upload session not found" | `route_id` o `upload_session_id` no coinciden con la respuesta del session | Copiar valores exactos del POST session |
+| Complete size/checksum mismatch | PUT sin body (archivo vacío) | En Insomnia: Body → File, seleccionar el archivo correcto |
+| Insomnia no lee archivos locales | Restricción de seguridad | Settings → General → Security → allowlist del directorio del proyecto |
+
 ---
 
 ## Configuración
@@ -391,7 +421,9 @@ Variables en `local.settings.json` (local) o **Application Settings** (Azure):
 
 | Variable | Descripción |
 |----------|-------------|
-| `JWT_MOCK_SECRET` | Secreto JWT POC |
+| `JWT_MOCK_SECRET` | Secreto JWT POC (no-local) |
+| `JWT_LOCAL_TOKEN` | Token fijo en `ENVIRONMENT=local` | `local-dev-token` |
+| `JWT_MOCK_USER_ID` | User ID del token local / mock | `user-local` |
 | `SAS_TTL_MINUTES` | Expiración SAS (minutos) |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | Telemetría App Insights |
 
@@ -487,6 +519,43 @@ Estrategia: **TDD** con pytest — unit tests para servicios y modelos, integrat
 
 ---
 
+## Prueba manual (Insomnia)
+
+Archivos de prueba en [`samples/`](samples/). Cada carpeta de viaje incluye los 4 archivos + `manifest.json` (sizes/checksums para complete).
+
+1. **Session** — `POST http://localhost:7071/api/upload/session`  
+   Header: `Authorization: Bearer local-dev-token`  
+   Body: `{"route_id": "route-001"}`  
+   Guardar de la respuesta: `upload_session_id`, `route_id`, las 4 SAS URLs.
+
+2. **Upload** — 4× `PUT` directo a cada SAS URL (no pasan por la API)  
+   Header: `x-ms-blob-type: BlockBlob`  
+   Body: archivo correspondiente (`gps.json`, `imu.bin`, `bt.json`, `metadata.json`).
+
+3. **Complete** — `POST http://localhost:7071/api/upload/complete`  
+   Body según `manifest.json` del sample, usando el mismo `route_id` y `upload_session_id` del paso 1.
+
+4. **Verificar** — Cosmos Explorer: status `PUBLISHED` y `event_id` = `evt_{upload_session_id}`; Kafka UI (`http://localhost:8090`): mensaje `TripEvent` en topic `trip-processing`.
+
+Flujo detallado con curl: [`docs/runbook.md`](docs/runbook.md). Material para presentación: [`docs/presentation-notebooklm.md`](docs/presentation-notebooklm.md).
+
+---
+
+## Identificadores e idempotencia
+
+| Campo | Rol |
+|-------|-----|
+| `route_id` | Identificador del viaje. Partition key en Cosmos y en el evento. |
+| `upload_session_id` | ID único del intento (`sess_<uuid>`). ID del documento en Cosmos. |
+| `event_id` | `evt_{upload_session_id}`. Se asigna al completar con éxito. |
+| `correlation_id` | Trazabilidad en logs (`x-correlation-id`). |
+
+- Varios sessions pueden compartir el mismo `route_id` — cada uno crea un documento Cosmos distinto.
+- **Complete idempotente:** si el session ya está `PUBLISHED`, reintentar devuelve `VALIDATED` sin republicar el evento.
+- Tras session, `event_id` es `null` hasta un complete exitoso.
+
+---
+
 ## Documentación
 
 | Documento | Contenido |
@@ -497,6 +566,8 @@ Estrategia: **TDD** con pytest — unit tests para servicios y modelos, integrat
 | [`docs/implementation-plan.md`](docs/implementation-plan.md) | Tasks T01–T18 |
 | [`docs/azure-portal-checklist.md`](docs/azure-portal-checklist.md) | Checklist infra Azure |
 | [`docs/runbook.md`](docs/runbook.md) | Setup local, curl demo, deploy |
+| [`docs/presentation-notebooklm.md`](docs/presentation-notebooklm.md) | Material para diapositivas / NotebookLM |
+| [`samples/README.md`](samples/README.md) | Índice de archivos de ejemplo |
 | [`docs/history.md`](docs/history.md) | Historial de commits |
 
 ---
