@@ -34,6 +34,8 @@ class UploadSessionService:
         correlation_id: str,
     ) -> UploadSessionResponse:
         """Create SAS targets and persist the initial trip log."""
+        self._blob.ensure_container()
+
         upload_session_id = f"sess_{uuid.uuid4().hex[:12]}"
         timestamp = datetime.now(UTC)
         trip_storage_root = build_trip_storage_root(timestamp)

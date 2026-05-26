@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "sample_rate_hz": 1,
+  "points": [
+    {
+      "timestamp": "2026-05-26T16:00:00.000Z",
+      "lat": -34.603722,
+      "lon": -58.381592,
+      "accuracy_m": 4.2,
+      "speed_kmh": 32.5,
+      "heading_deg": 87.0
+    },
+    {
+      "timestamp": "2026-05-26T16:00:01.000Z",
+      "lat": -34.603510,
+      "lon": -58.381210,
+      "accuracy_m": 3.8,
+      "speed_kmh": 33.1,
+      "heading_deg": 88.5
+    },
+    {
+      "timestamp": "2026-05-26T16:00:02.000Z",
+      "lat": -34.603298,
+      "lon": -58.380828,
+      "accuracy_m": 4.0,
+      "speed_kmh": 33.4,
+      "heading_deg": 89.0
+    }
+  ]
+}

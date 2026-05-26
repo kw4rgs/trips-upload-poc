@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "scan_started_at": "2026-05-26T16:00:00.000Z",
+  "scan_duration_ms": 5000,
+  "devices": [
+    {
+      "address": "AA:BB:CC:DD:EE:01",
+      "name": "OBD-II Adapter",
+      "rssi": -62,
+      "last_seen": "2026-05-26T16:00:01.200Z"
+    },
+    {
+      "address": "AA:BB:CC:DD:EE:02",
+      "name": null,
+      "rssi": -78,
+      "last_seen": "2026-05-26T16:00:03.800Z"
+    }
+  ]
+}

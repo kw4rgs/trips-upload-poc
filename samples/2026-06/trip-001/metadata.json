@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "route_id": "route-2026-06-001",
+  "trip_started_at": "2026-06-03T14:00:00.000Z",
+  "trip_ended_at": "2026-06-03T14:18:00.000Z",
+  "label": "June 2026 \u2014 weekday trip",
+  "app": {
+    "name": "trips-mobile-poc",
+    "version": "0.1.0",
+    "platform": "ios"
+  },
+  "device": {
+    "model": "iPhone15,2",
+    "os_version": "18.4"
+  },
+  "sources": [
+    "gps",
+    "imu",
+    "bt",
+    "metadata"
+  ]
+}

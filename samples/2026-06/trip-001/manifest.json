@@ -1,0 +1,27 @@
+{
+  "description": "Sample trip upload \u2014 June 2026 \u2014 weekday trip",
+  "route_id": "route-2026-06-001",
+  "trip_started_at": "2026-06-03T14:00:00.000Z",
+  "files": [
+    {
+      "name": "gps.json",
+      "size": 793,
+      "checksum": "efa241ce940c8c83d1458d45d0f18b54"
+    },
+    {
+      "name": "imu.bin",
+      "size": 96,
+      "checksum": "9c1d2f56088fd2c39e41d7864a3d9491"
+    },
+    {
+      "name": "bt.json",
+      "size": 271,
+      "checksum": "c5f5970cd0229a27bf75f9a86d82077b"
+    },
+    {
+      "name": "metadata.json",
+      "size": 430,
+      "checksum": "7f4f0fb55fe1aa83f73505f0111d9eed"
+    }
+  ]
+}

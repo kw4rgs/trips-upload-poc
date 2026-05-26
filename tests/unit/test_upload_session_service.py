@@ -45,4 +45,5 @@ def test_create_session_returns_sas_for_all_sources(settings) -> None:
     assert response.route_id == "route-1"
     assert len(response.uploads) == len(TripSource)
     assert response.uploads[TripSource.GPS].sas_url.startswith("https://")
+    mock_blob.ensure_container.assert_called_once()
     mock_cosmos.create_trip_log.assert_called_once()

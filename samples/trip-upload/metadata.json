@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "route_id": "route-demo-001",
+  "trip_started_at": "2026-05-26T15:58:00.000Z",
+  "trip_ended_at": "2026-05-26T16:05:00.000Z",
+  "app": {
+    "name": "trips-mobile-poc",
+    "version": "0.1.0",
+    "platform": "ios"
+  },
+  "device": {
+    "model": "iPhone15,2",
+    "os_version": "18.4"
+  },
+  "sources": ["gps", "imu", "bt", "metadata"]
+}

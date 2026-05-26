@@ -1,0 +1,25 @@
+{
+  "description": "Sample trip upload files for local and Azure manual testing",
+  "files": [
+    {
+      "name": "gps.json",
+      "size": 622,
+      "checksum": "d73bf6a0870e393a839fa39cba3f3c90"
+    },
+    {
+      "name": "imu.bin",
+      "size": 72,
+      "checksum": "9fef63705e18a7370d12af8b498612a6"
+    },
+    {
+      "name": "bt.json",
+      "size": 403,
+      "checksum": "b3a7719ba7878cbfb34b37ded2247860"
+    },
+    {
+      "name": "metadata.json",
+      "size": 363,
+      "checksum": "aa2f0f49004983d44b09833938cd7ff7"
+    }
+  ]
+}

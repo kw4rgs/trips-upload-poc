@@ -23,6 +23,9 @@ SOURCE_FILE_NAMES: dict[TripSource, str] = {
     TripSource.METADATA: "metadata.json",
 }
 
+# Latest azure-storage-blob defaults break Azurite; pin a supported version locally.
+AZURITE_BLOB_API_VERSION = "2023-11-03"
+
 
 class BlobStorageError(Exception):
     """Base blob storage error."""
@@ -114,7 +117,10 @@ class BlobStorageService:
                 raise BlobStorageConfigurationError(
                     "USE_AZURITE=true but AzureWebJobsStorage connection string is not set",
                 )
-            return BlobServiceClient.from_connection_string(conn_str)
+            return BlobServiceClient.from_connection_string(
+                conn_str,
+                api_version=AZURITE_BLOB_API_VERSION,
+            )
 
         if not self._settings.storage_account_name:
             raise BlobStorageConfigurationError("STORAGE_ACCOUNT_NAME is not configured")

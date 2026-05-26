@@ -1,0 +1,27 @@
+{
+  "description": "Sample trip upload \u2014 May 2026 \u2014 morning commute",
+  "route_id": "route-2026-05-001",
+  "trip_started_at": "2026-05-15T10:00:00.000Z",
+  "files": [
+    {
+      "name": "gps.json",
+      "size": 794,
+      "checksum": "d82828c7592e51c8991acc012a7605c7"
+    },
+    {
+      "name": "imu.bin",
+      "size": 96,
+      "checksum": "8c138b3d767c511eb4d6e5041f29931c"
+    },
+    {
+      "name": "bt.json",
+      "size": 271,
+      "checksum": "194363558ff08494a783417a4aa0c3e7"
+    },
+    {
+      "name": "metadata.json",
+      "size": 432,
+      "checksum": "6dc1bf4d3eb05de0fc47e685db7c3b01"
+    }
+  ]
+}
