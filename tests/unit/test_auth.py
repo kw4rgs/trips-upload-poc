@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from config import Settings, get_settings
 from services.auth import (
     AuthConfigurationError,
     ExpiredTokenError,
@@ -67,3 +68,32 @@ def test_authenticate_request_validates_authorization_header(settings) -> None:
     token = create_mock_token("user-456", settings.jwt_mock_secret)
     user_id = authenticate_request(f"Bearer {token}", settings=settings)
     assert user_id == "user-456"
+
+
+def test_authenticate_request_accepts_local_predefined_token(
+    settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "local")
+    monkeypatch.setenv("JWT_LOCAL_TOKEN", "local-dev-token")
+    monkeypatch.setenv("JWT_MOCK_USER_ID", "user-local")
+    get_settings.cache_clear()
+    local_settings = get_settings()
+
+    user_id = authenticate_request(
+        "Bearer local-dev-token",
+        settings=local_settings,
+    )
+    assert user_id == "user-local"
+
+
+def test_local_predefined_token_is_ignored_in_production(
+    settings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    get_settings.cache_clear()
+    production_settings = get_settings()
+
+    with pytest.raises(InvalidTokenError):
+        authenticate_request("Bearer local-dev-token", settings=production_settings)

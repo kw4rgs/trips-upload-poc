@@ -53,9 +53,24 @@ def extract_bearer_token(authorization_header: str | None) -> str:
     return token
 
 
+def _resolve_local_predefined_user(token: str, settings: Settings) -> str | None:
+    """Return the local dev user id when a predefined static token is used."""
+    if settings.environment != "local":
+        return None
+    if not settings.jwt_local_token:
+        return None
+    if token != settings.jwt_local_token:
+        return None
+    return settings.jwt_mock_user_id
+
+
 def validate_jwt(token: str, settings: Settings | None = None) -> str:
     """Validate a JWT mock token and return the authenticated user id."""
     resolved_settings = settings or get_settings()
+    local_user_id = _resolve_local_predefined_user(token, resolved_settings)
+    if local_user_id is not None:
+        return local_user_id
+
     if not resolved_settings.jwt_mock_secret:
         raise AuthConfigurationError("JWT_MOCK_SECRET is not configured")
 

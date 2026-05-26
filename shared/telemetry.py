@@ -2,11 +2,28 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from config import get_settings
+from shared.logging import get_logger
 
 _configured = False
+_logger = get_logger(__name__)
+
+# Same UUID check as azure-monitor-opentelemetry exporter.
+_INSTRUMENTATION_KEY_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+)
+
+
+def _is_valid_applicationinsights_connection_string(connection_string: str) -> bool:
+    """Return True when the connection string has a valid instrumentation key UUID."""
+    pairs = dict(item.split("=", 1) for item in connection_string.split(";") if "=" in item)
+    instrumentation_key = pairs.get("InstrumentationKey") or pairs.get("instrumentationkey")
+    if not instrumentation_key:
+        return False
+    return _INSTRUMENTATION_KEY_PATTERN.match(instrumentation_key) is not None
 
 
 def configure_telemetry() -> None:
@@ -15,8 +32,17 @@ def configure_telemetry() -> None:
     if _configured:
         return
 
-    connection_string = get_settings().applicationinsights_connection_string
+    connection_string = get_settings().applicationinsights_connection_string.strip()
     if not connection_string:
+        return
+
+    if not _is_valid_applicationinsights_connection_string(connection_string):
+        _logger.warning(
+            {
+                "message": "Skipping Application Insights telemetry: invalid connection string",
+                "hint": "Unset APPLICATIONINSIGHTS_CONNECTION_STRING locally or use a valid App Insights connection string",
+            }
+        )
         return
 
     from azure.monitor.opentelemetry import configure_azure_monitor

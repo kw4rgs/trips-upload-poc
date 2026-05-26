@@ -35,6 +35,8 @@ services:
     environment:
       AZURE_COSMOS_EMULATOR_PARTITION_COUNT: "3"
       AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: "true"
+      # Host-side clients (func start on macOS) must not follow internal Docker IPs.
+      AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE: "127.0.0.1"
     volumes:
       - cosmos-data:/tmp/cosmos
 

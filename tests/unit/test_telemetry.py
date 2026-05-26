@@ -20,11 +20,27 @@ def test_configure_telemetry_skips_without_connection_string(monkeypatch: pytest
     mock_configure.assert_not_called()
 
 
-def test_configure_telemetry_enables_azure_monitor(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_configure_telemetry_skips_invalid_connection_string(monkeypatch: pytest.MonkeyPatch) -> None:
     reset_telemetry()
     monkeypatch.setenv(
         "APPLICATIONINSIGHTS_CONNECTION_STRING",
         "InstrumentationKey=test-key",
+    )
+    from config import get_settings
+
+    get_settings.cache_clear()
+
+    with patch("azure.monitor.opentelemetry.configure_azure_monitor") as mock_configure:
+        configure_telemetry()
+
+    mock_configure.assert_not_called()
+
+
+def test_configure_telemetry_enables_azure_monitor(monkeypatch: pytest.MonkeyPatch) -> None:
+    reset_telemetry()
+    monkeypatch.setenv(
+        "APPLICATIONINSIGHTS_CONNECTION_STRING",
+        "InstrumentationKey=00000000-0000-0000-0000-000000000001",
     )
     from config import get_settings
 

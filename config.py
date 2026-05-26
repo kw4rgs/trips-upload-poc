@@ -76,7 +76,14 @@ class Settings(BaseSettings):
 
     # --- Auth ---
     jwt_mock_secret: str = Field(default="", description="POC JWT signing secret")
-    jwt_mock_user_id: str = Field(default="", description="POC default user id (test only)")
+    jwt_mock_user_id: str = Field(
+        default="user-local",
+        description="Default user id for local predefined token and tests",
+    )
+    jwt_local_token: str = Field(
+        default="local-dev-token",
+        description="Static bearer token accepted when ENVIRONMENT=local",
+    )
     sas_ttl_minutes: int = Field(default=15, description="SAS token TTL in minutes")
 
     # --- Observability ---

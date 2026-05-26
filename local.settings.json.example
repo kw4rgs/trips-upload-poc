@@ -26,6 +26,8 @@
     "EVENTHUB_FULLY_QUALIFIED_NAMESPACE": "<namespace>.servicebus.windows.net",
 
     "JWT_MOCK_SECRET": "poc-dev-secret-change-me-32chars!!",
+    "JWT_MOCK_USER_ID": "user-local",
+    "JWT_LOCAL_TOKEN": "local-dev-token",
     "SAS_TTL_MINUTES": "15",
     "APPLICATIONINSIGHTS_CONNECTION_STRING": ""
   }

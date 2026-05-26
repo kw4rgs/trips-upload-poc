@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from typing import Any
 
-from azure.cosmos import CosmosClient
+from azure.cosmos import CosmosClient, PartitionKey
 from azure.cosmos.exceptions import CosmosHttpResponseError, CosmosResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 
@@ -18,6 +19,11 @@ COSMOS_EMULATOR_KEY = (
 )
 
 _HTTP_PRECONDITION_FAILED = 412
+
+
+def _is_emulator_endpoint(endpoint: str) -> bool:
+    """Return True when the endpoint targets the local Cosmos DB emulator."""
+    return "localhost" in endpoint or "127.0.0.1" in endpoint
 
 
 class CosmosDbError(Exception):
@@ -53,11 +59,25 @@ class CosmosService:
         if not endpoint:
             raise CosmosConfigurationError("COSMOS_ENDPOINT is not configured")
 
-        if "localhost" in endpoint:
-            client = CosmosClient(endpoint, credential=COSMOS_EMULATOR_KEY)
-        else:
-            client = CosmosClient(endpoint, credential=DefaultAzureCredential())
+        if _is_emulator_endpoint(endpoint):
+            # Disable endpoint discovery so the SDK stays on localhost:8081
+            # instead of following the emulator's internal Docker IP (172.19.x.x).
+            os.environ["AZURE_COSMOS_DISABLE_SSL_VERIFICATION"] = "true"
+            client = CosmosClient(
+                endpoint,
+                credential=COSMOS_EMULATOR_KEY,
+                connection_verify=False,
+                enable_endpoint_discovery=False,
+            )
+            database = client.create_database_if_not_exists(
+                self._settings.cosmos_database,
+            )
+            return database.create_container_if_not_exists(
+                id=self._settings.cosmos_container,
+                partition_key=PartitionKey(path="/route_id"),
+            )
 
+        client = CosmosClient(endpoint, credential=DefaultAzureCredential())
         database = client.get_database_client(self._settings.cosmos_database)
         return database.get_container_client(self._settings.cosmos_container)
 
